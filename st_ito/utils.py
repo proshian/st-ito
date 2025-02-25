@@ -459,7 +459,9 @@ def get_param_embeds(
     # if peak_normalize:
     #    x = batch_peak_normalize(x)
 
-    if sample_rate != 48000:
+    EXPECTED_SAMPLE_RATE = 48000
+
+    if sample_rate != EXPECTED_SAMPLE_RATE:
         x = torchaudio.functional.resample(x, sample_rate, 48000)
 
     seq_len = x.shape[-1]  # update seq_len after resampling

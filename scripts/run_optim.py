@@ -1,17 +1,17 @@
+from typing import List
 import os
-import cma
 import json
-import torch
 import argparse
-import torchaudio
-import pedalboard
-import numpy as np
-import dasp_pytorch
 import multiprocessing as mp
-import matplotlib.pyplot as plt
 
 from tqdm import tqdm
-from typing import List
+import cma
+import torch
+import torchaudio
+import pedalboard
+import dasp_pytorch
+import matplotlib.pyplot as plt
+import numpy as np
 
 from st_ito.effects import (
     BasicParametricEQ,
@@ -27,7 +27,6 @@ from st_ito.style_transfer import (
     run_deepafx_st,
     process_audio,
 )
-
 from st_ito.utils import (
     load_param_model,
     get_param_embeds,
@@ -297,7 +296,7 @@ def run_autodiff(
     return output_audio.detach().cpu(), param_dict, fopt, fval_history, wopt_history
 
 
-if __name__ == "__main__":
+def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser()
     parser.add_argument("input", type=str)
     parser.add_argument("target", type=str)
@@ -313,24 +312,31 @@ if __name__ == "__main__":
         "--effect-type", type=str, default="vst", choices=["vst", "basic"]
     )
     parser.add_argument(
-        "--algorithm", type=str, default="es", choices=["es", "autodiff"]
+        "--algorithm", type=str, default="es", choices=["es", "autodiff"],
+        help="Optimization algorithm to use. 'es' uses CMA-ES, 'autodiff' uses automatic differentiation."
     )
     parser.add_argument("--dropout", type=float, default=0.0)
     parser.add_argument(
         "--metric", type=str, default="param", choices=["param", "clap"]
     )
     args = parser.parse_args()
+    return args
+
+
+def download_vst_plugins() -> None:
+    os.system("wget https://huggingface.co/csteinmetz1/afx-rep/resolve/main/plugins.tar")
+    os.system("tar -xvf plugins.tar")
+    os.system("rm plugins.tar")
+
+
+if __name__ == "__main__":
+    args = parse_args()
 
     sample_rate = 48000
     os.makedirs("output/optim", exist_ok=True)
 
-    # check for plugins directory
     if not os.path.exists("plugins"):
-        os.system(
-            "wget https://huggingface.co/csteinmetz1/afx-rep/resolve/main/plugins.tar"
-        )
-        os.system("tar -xvf plugins.tar")
-        os.system("rm plugins.tar")
+        download_vst_plugins()
 
     # define plugins
     if args.algorithm == "autodiff":
